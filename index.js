@@ -3,7 +3,9 @@ import {port,dburl } from './config/env.js'
 import linkToDatabase from './config/db.js'
 import { userRouter } from './router/user.router.js'
 import { authRouter } from './router/auth.router.js'
+import cors from 'cors'
 const app = express()
+app.use(cors())
 app.use(express.json()) 
 app.get("/", (req,res)=>{
     res.status(200).json({
