@@ -32,9 +32,10 @@ authRouter.post ('/signup', async (req, res,next) => {
             }
     validation.data.password = await bcrypt.hash(validation.data.password,10)
     const Exist_user = await UserModel.findOne({email})
+    console.log(Exist_user)
     if(Exist_user)
-      return res.status(400).json({
-        sucess:1,
+      return res.status(200).json({
+        success:1,
         msg :"User Exist please login",
         Exist_user
       })
