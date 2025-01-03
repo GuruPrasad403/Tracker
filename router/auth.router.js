@@ -23,7 +23,11 @@ authRouter.post ('/signup', async (req, res,next) => {
     const validation = UserValidation.safeParse(req.body);
     const otp = GenerateOtp()
         if(!validation.success){
-                res.json (validation.error.issues);
+                res.json ({
+                  msg:"Invalid Inputs",
+                  success:0,
+                  errors:validation.error.issues
+                });
             }
     validation.data.password = await bcrypt.hash(validation.data.password,10)
     const user =await UserModel.create(validation.data)
@@ -40,7 +44,7 @@ authRouter.post ('/signup', async (req, res,next) => {
     }).catch(err => {
         console.error("Error saving OTP:", err);
     });
-    res.json({user,userOtp})
+    res.json({user})
     
 } catch (e) {
     console.log("Error in the line 24")
