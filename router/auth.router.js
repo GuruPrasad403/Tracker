@@ -20,6 +20,7 @@ authRouter.get ('/', (req, res) => {
 
 authRouter.post ('/signup', async (req, res,next) => {
   try {
+    const {email} = req.body
     const validation = UserValidation.safeParse(req.body);
     const otp = GenerateOtp()
         if(!validation.success){
@@ -30,7 +31,7 @@ authRouter.post ('/signup', async (req, res,next) => {
                 });
             }
     validation.data.password = await bcrypt.hash(validation.data.password,10)
-    const Exist_user = await UserModel.findOne({email:validation.data.email})
+    const Exist_user = await UserModel.findOne({email})
     if(Exist_user)
       return res.status(400).json({
         sucess:1,
