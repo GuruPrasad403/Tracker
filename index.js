@@ -31,7 +31,7 @@ app.use((err, req, res, next) => {
     res.status(500);
     res.send(err);
 });
-try{
+try{    
     const valid = linkToDatabase(dburl)
     valid ? app.listen(port,()=>{
         console.log(`server Started http://localhost:${port}`,)

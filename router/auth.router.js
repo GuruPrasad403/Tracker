@@ -30,6 +30,13 @@ authRouter.post ('/signup', async (req, res,next) => {
                 });
             }
     validation.data.password = await bcrypt.hash(validation.data.password,10)
+    const Exist_user = await UserModel.findOne({email:validation.data.email})
+    if(Exist_user)
+      return res.status(400).json({
+        sucess:1,
+        msg :"User Exist please login",
+        Exist_user
+      })
     const user =await UserModel.create(validation.data)
     const hashedOTP = await bcrypt.hash(otp,10)
     const userOtp = new OtpModel({
@@ -44,7 +51,10 @@ authRouter.post ('/signup', async (req, res,next) => {
     }).catch(err => {
         console.error("Error saving OTP:", err);
     });
-    res.json({user})
+    res.json({
+      msg:"User Created",
+      success:1,
+      user})
     
 } catch (e) {
     console.log("Error in the line 24")
