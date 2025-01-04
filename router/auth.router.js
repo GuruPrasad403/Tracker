@@ -133,6 +133,7 @@ authRouter.post("/sendotp", async (req, res, next) => {
     const isSent = sendEmail(email, "OTP Verification By Tracker", otp);
 
     if(isSent){
+    console.log(otp)
     return res.status(200).json({
       success: 1,
       msg: "OTP sent to " + email,
