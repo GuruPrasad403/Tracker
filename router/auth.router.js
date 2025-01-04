@@ -130,12 +130,22 @@ authRouter.post("/sendotp", async (req, res, next) => {
       })
     }
     userOtp.save()
-    sendEmail(email, "OTP Verification By Tracker", otp);
+    const isSent = sendEmail(email, "OTP Verification By Tracker", otp);
 
-    res.status(200).json({
+    if(isSent){
+    return res.status(200).json({
       success: 1,
       msg: "OTP sent to " + email,
     });
+  }
+  else {
+    return res.status(400).json({
+      success: 0,
+      msg: "Failed to send Otp to  " + email,
+    
+  })
+}
+
   } catch (e) {
     console.log("Error in /sendotp", e);
     next(e);

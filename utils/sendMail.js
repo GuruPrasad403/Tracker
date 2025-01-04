@@ -170,8 +170,10 @@ async function sendEmail(to,Sub,otp,) {
         
         console.log('Message sent successfully: %s', info.messageId);
         console.log("Message sent to mail :", to)
+        return true;
     } catch (error) {
         console.error('Error while sending email:', error);
+        return false
     }
 }
 
