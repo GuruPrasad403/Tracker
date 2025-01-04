@@ -99,7 +99,7 @@ authRouter.post("/otp",async(req,res,next)=>{
 })
 
 
-authRouter.post("/sendOtp", async (req, res, next) => {
+authRouter.post("/sendotp", async (req, res, next) => {
   try {
     const { email, userId } = req.body;
     console.log("User ID:", userId,email);
