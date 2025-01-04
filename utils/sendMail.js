@@ -1,8 +1,5 @@
 import nodemailer from 'nodemailer';
-import dotenv from 'dotenv';
-import send from 'send';
-
-dotenv.config();
+import {email,pass} from '../config/env.js'
 
 async function sendEmail(to,Sub,otp,) {
     try {
@@ -12,8 +9,8 @@ async function sendEmail(to,Sub,otp,) {
             port: 465, // Port for secure TLS
             secure: true, // Use SSL/TLS
             auth: {
-            user: process.env.EMAIL_USER, // Your email address
-         pass: process.env.EMAIL_PASS, // Your app password
+            user:email , // Your email address
+         pass:pass , // Your app password
     },
     tls: {
       rejectUnauthorized: false, // Disable strict TLS verification (use only for debugging)
@@ -172,6 +169,7 @@ async function sendEmail(to,Sub,otp,) {
         });
         
         console.log('Message sent successfully: %s', info.messageId);
+        console.log("Message sent to mail :", to)
     } catch (error) {
         console.error('Error while sending email:', error);
     }
