@@ -19,7 +19,7 @@ const UserSchema = new mongoose.Schema ({
     type: Number,
     require: true,
     max: [4, 'Pin Must be 4 Digits Number'],
-  },
+  },  
   joined: {
     type: Date,
     default: Date.now (),

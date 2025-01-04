@@ -81,11 +81,14 @@ authRouter.post("/otp",async(req,res,next)=>{
       const validation = compareOtp?await bcrypt.compare(otp,userOtp?.UserOTP) : false
       if(validation){
         const user = await UserModel.findByIdAndUpdate({_id:id},{ $set: { isVerified: true } },{new : true})
-        res.json({validation,user})
+        res.status(200).json({
+          success:1,
+          msg:"User Verified ✔️",
+          validation,user})
       }
       else{
         res.status(400).json({
-          sucess:0,
+          success:0,
           msg:"Invalid User OTP"
         })
       }    
@@ -96,38 +99,61 @@ authRouter.post("/otp",async(req,res,next)=>{
 })
 
 
-authRouter.post("/sendOtp", async(req,res,next)=>{
-    try{
-      const {email,userId} = req.body
-    const otp = GenerateOtp()
-    const hashedOTP = await bcrypt.hash(otp,5)
-    const id = new mongoose.Types.ObjectId(userId)
-    const userOtp = await OtpModel.findOneAndUpdate(
-      { userId: id }, 
-      { $set: { UserOTP: hashedOTP } },
-      { new: true, upsert: true } 
-    );
+authRouter.post("/sendOtp", async (req, res, next) => {
+  try {
+    const { email, userId } = req.body;
+    console.log("User ID:", userId,email);
 
-    sendEmail(email,"OTP Verification By Tracker",otp)
-    res.status(200).json({
-      success:1,
-      msg:"otp send to "+email,
-      userOtp
-    })  
-  }
-    
-    catch (e){
-      console.log("Error in 89",e)
-      next(e)
+    // Validate the format of userId
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({
+        success: 0,
+        msg: "Invalid User ID format.",
+      });
     }
-})
 
+    const otp = GenerateOtp();
+    const hashedOTP = await bcrypt.hash(otp, 5);
+
+    const id = new mongoose.Types.ObjectId(userId);
+
+    const userOtp = await OtpModel.findOne(
+      { userId: id }
+    )
+    if(userOtp){
+      userOtp.UserOTP = hashedOTP
+    }
+    else{
+       await OtpModel.create({
+        userId:userId,
+        UserOTP:hashedOTP,
+      })
+    }
+    userOtp.save()
+    sendEmail(email, "OTP Verification By Tracker", otp);
+
+    res.status(200).json({
+      success: 1,
+      msg: "OTP sent to " + email,
+    });
+  } catch (e) {
+    console.log("Error in /sendotp", e);
+    next(e);
+  }
+});
 
 authRouter.get("/signin",async(req,res,next)=>{
   try{
-    const {email,password} = req.body;
-    const user = await UserModel.findOne({email})
-    const validate = await bcrypt.compare(password,user.password)
+    const {email,password} = req.query;
+    const user = await UserModel.findOne({email:email})
+    console.log(user)
+    if(!user){
+      return res.status(401).json({
+        success:0,
+        msg:"User Not Found" 
+      })
+    }
+    const validate = await bcrypt.compare(password,user?.password)
     if(!validate)
       return res.status(401).json({
         success:0,
@@ -135,8 +161,9 @@ authRouter.get("/signin",async(req,res,next)=>{
       })
     const token = jwt.sign(user.email, JWT)
     res.status(200).json({
-      sucess:1,
+      success:1,
       token,
+      user,
       msg:"User Signed In"
     })
   }
