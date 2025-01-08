@@ -44,7 +44,7 @@ authRouter.post ('/signup', async (req, res,next) => {
     const userOtp = new OtpModel({
         userId: user._id, // Ensure this is a valid ObjectId
         UserOTP: hashedOTP,
-        expiryTime: new Date(Date.now() + 300 * 1000) 
+        expiryTime: Date.now() + 10 * 60 * 1000 
     });
     
     userOtp.save().then(() => {
@@ -98,57 +98,42 @@ authRouter.post("/otp",async(req,res,next)=>{
   }
 })
 
-
 authRouter.post("/sendotp", async (req, res, next) => {
   try {
     const { email, userId } = req.body;
-    console.log("User ID:", userId,email);
+    console.log("User ID:", userId, email);
 
-    // Validate the format of userId
     if (!mongoose.Types.ObjectId.isValid(userId)) {
-      return res.status(400).json({
-        success: 0,
-        msg: "Invalid User ID format.",
-      });
+      return res.status(400).json({ success: 0, msg: "Invalid User ID format." });
     }
 
     const otp = GenerateOtp();
     const hashedOTP = await bcrypt.hash(otp, 5);
-
     const id = new mongoose.Types.ObjectId(userId);
 
-    const userOtp = await OtpModel.findOne(
-      { userId: id }
-    )
-    if(userOtp){
-      userOtp.UserOTP = hashedOTP
+    const userOtp = await OtpModel.findOne({ userId: id });
+    if (userOtp) {
+      userOtp.UserOTP = hashedOTP;
+      userOtp.expiryTime = Date.now() + 10 * 60 * 1000;
+      await userOtp.save();
+    } else {
+      await OtpModel.create({
+        userId: userId,
+        UserOTP: hashedOTP,
+        expiryTime: Date.now() + 10 * 60 * 1000,
+      });
     }
-    else{
-       await OtpModel.create({
-        userId:userId,
-        UserOTP:hashedOTP,
-      })
+
+    const isSent = await sendEmail(email, "OTP Verification By Tracker", otp);
+
+    if (isSent) {
+      console.log(otp);
+      return res.status(200).json({ success: 1, msg: "OTP sent to " + email });
+    } else {
+      return res.status(400).json({ success: 0, msg: "Failed to send OTP to " + email });
     }
-    userOtp.save()
-    const isSent = sendEmail(email, "OTP Verification By Tracker", otp);
-
-    if(isSent){
-    console.log(otp)
-    return res.status(200).json({
-      success: 1,
-      msg: "OTP sent to " + email,
-    });
-  }
-  else {
-    return res.status(400).json({
-      success: 0,
-      msg: "Failed to send Otp to  " + email,
-    
-  })
-}
-
   } catch (e) {
-    console.log("Error in /sendotp", e);
+    console.error("Error in /sendotp", e);
     next(e);
   }
 });
