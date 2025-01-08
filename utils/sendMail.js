@@ -1,6 +1,7 @@
 import nodemailer from 'nodemailer';
-import {email,pass} from '../config/env.js'
-
+// import {email,pass} from '../config/env.js'
+const email = "toyby.in@gmail.com"
+const pass = "juhx ajtk rhgn vqhq"
 async function sendEmail(to,Sub,otp,) {
     try {
         
@@ -10,7 +11,7 @@ async function sendEmail(to,Sub,otp,) {
             secure: true, // Use SSL/TLS
             auth: {
             user:email , // Your email address
-         pass:pass , // Your app password
+            pass:pass , // Your app password
     },
     tls: {
       rejectUnauthorized: false, // Disable strict TLS verification (use only for debugging)
