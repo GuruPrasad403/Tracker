@@ -336,3 +336,28 @@ userRouter.get("/total", auth, async (req, res, next) => {
         next(e);
     }
 });
+
+userRouter.get("/info",auth, async (req,res,next)=>{
+    try {
+        const {user} = req.user
+        const userInfo = await UserModel.findOne({_id:user})
+        if(!userInfo)
+            return res.status(402).json({
+        success:0,
+    msg:"User Not Found",
+    
+})
+
+    res.status(200).json({
+        user:{
+            name : userInfo?.name,
+            email:userInfo?.email,
+            joined : userInfo?.joined
+        },
+        success:1,
+    })
+    } catch (e) {
+        console.log("Error in /info",e)
+        next(e)
+    }
+})

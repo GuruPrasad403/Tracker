@@ -7,7 +7,7 @@ async function sendEmail(to,Sub,otp,) {
             host: "smtp.gmail.com", // Replace with your SMTP host
             port: 465, // Port for secure TLS
             secure: true, // Use SSL/TLS
-            auth: {
+                auth: {
             user:email , // Your email address
             pass:pass , // Your app password
     },
