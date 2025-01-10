@@ -340,6 +340,8 @@ userRouter.get("/total", auth, async (req, res, next) => {
 userRouter.get("/info",auth, async (req,res,next)=>{
     try {
         const {user} = req.user
+        const userId = new mongoose.Types.ObjectId(user)
+        const BankInfo = await UserBankModel.findOne({userId})
         const userInfo = await UserModel.findOne({_id:user})
         if(!userInfo)
             return res.status(402).json({
@@ -352,9 +354,11 @@ userRouter.get("/info",auth, async (req,res,next)=>{
         user:{
             name : userInfo?.name,
             email:userInfo?.email,
-            joined : userInfo?.joined
+            joined : userInfo?.joined,
+            BankInfo
         },
         success:1,
+        
     })
     } catch (e) {
         console.log("Error in /info",e)
