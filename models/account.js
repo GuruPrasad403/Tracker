@@ -11,7 +11,7 @@ const UserBank = new mongoose.Schema({
         {
             name: {
                 type: String,
-                enum: ["bank", "wallet", "savings"],
+                enum: ["Bank", "Wallet", "Savings"],
                 required: true,
             },
             amount: {
