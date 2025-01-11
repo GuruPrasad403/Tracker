@@ -68,6 +68,12 @@ authRouter.post ('/signup', async (req, res,next) => {
 authRouter.post("/otp",async(req,res,next)=>{
   try {
     const {userId,otp} = req.body;
+    if(!userId)
+      return res.status(403).json({
+        success:0,
+        msg:"Invalid User Id"
+     
+    })
     const id = new  mongoose.Types.ObjectId(userId)
     const userOtp = await OtpModel.findOne({userId : id})
     console.log(userOtp)
