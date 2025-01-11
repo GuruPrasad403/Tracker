@@ -130,117 +130,7 @@ userRouter.delete("/delet-bank",auth,async(req,res,next)=>{
     }
 })
 
-// Route to get expense summaries
-userRouter.get("/expenses-summary",auth, async (req, res, next) => {
-    try {
-        const { user } = req.user;
 
-        if (!user || !mongoose.Types.ObjectId.isValid(user)) {
-            return res.status(400).json({
-                success: 0,
-                msg: "Invalid or missing userId",
-            });
-        }
-
-        const matchStage = {
-            $match: {
-                userId: new mongoose.Types.ObjectId(user),
-            },
-        };
-
-        // Unwind each category
-        const unwindStages = [
-            { $unwind: { path: "$expenses", preserveNullAndEmptyArrays: true } },
-            { $unwind: { path: "$expenses.Housing", preserveNullAndEmptyArrays: true } },
-            { $unwind: { path: "$expenses.Transportation", preserveNullAndEmptyArrays: true } },
-            { $unwind: { path: "$expenses.Food", preserveNullAndEmptyArrays: true } },
-            { $unwind: { path: "$expenses.Medical", preserveNullAndEmptyArrays: true } },
-            { $unwind: { path: "$expenses.Entertainment", preserveNullAndEmptyArrays: true } },
-            { $unwind: { path: "$expenses.Education", preserveNullAndEmptyArrays: true } },
-            { $unwind: { path: "$expenses.Insurance", preserveNullAndEmptyArrays: true } },
-            { $unwind: { path: "$expenses.Taxes", preserveNullAndEmptyArrays: true } },
-            { $unwind: { path: "$expenses.PersonalCare", preserveNullAndEmptyArrays: true } },
-            { $unwind: { path: "$expenses.Others", preserveNullAndEmptyArrays: true } },
-        ];
-
-        // Aggregation pipeline for daily, weekly, monthly, yearly summaries
-        const finalProjection = {
-            $project: {
-                _id: 0,
-                period: "$_id",
-                totalAmount: 1,
-                transactions: 1,
-            },
-        };
-
-        const expenses = await ExpenseModel.aggregate([
-            matchStage,
-            ...unwindStages,
-            {
-                $facet: {
-                    daily: [
-                        {
-                            $group: {
-                                _id: {
-                                    day: { $dayOfYear: "$created" },
-                                    year: { $year: "$created" },
-                                },
-                                totalAmount: { $sum: "$expenses.amount" },
-                                transactions: { $push: "$expenses" },
-                            },
-                        },
-                        finalProjection,
-                    ],
-                    weekly: [
-                        {
-                            $group: {
-                                _id: {
-                                    week: { $week: "$created" },
-                                    year: { $year: "$created" },
-                                },
-                                totalAmount: { $sum: "$expenses.amount" },
-                                transactions: { $push: "$expenses" },
-                            },
-                        },
-                        finalProjection,
-                    ],
-                    monthly: [
-                        {
-                            $group: {
-                                _id: {
-                                    month: { $month: "$created" },
-                                    year: { $year: "$created" },
-                                },
-                                totalAmount: { $sum: "$expenses.amount" },
-                                transactions: { $push: "$expenses" },
-                            },
-                        },
-                        finalProjection,
-                    ],
-                    yearly: [
-                        {
-                            $group: {
-                                _id: { year: { $year: "$created" } },
-                                totalAmount: { $sum: "$expenses.amount" },
-                                transactions: { $push: "$expenses" },
-                            },
-                        },
-                        finalProjection,
-                    ],
-                },
-            },
-        ]);
-
-        res.status(200).json({
-            success: 1,
-            msg: "Expense summary retrieved successfully",
-            data: expenses[0], // Contains daily, weekly, monthly, and yearly summaries
-        });
-    } catch (e) {
-        console.error("Error in /expenses-summary:", e);
-        next(e);
-    }
-});
 
 userRouter.post("/add-expense",auth,async(req,res,next)=>{
 
@@ -306,10 +196,10 @@ userRouter.post("/add-expense",auth,async(req,res,next)=>{
 
 userRouter.get("/total", auth, async (req, res, next) => {
     try {
-        const { user } = req.user;
+        const { user } = req?.user;
         const userId = new mongoose.Types.ObjectId(user);
         console.log("User ID:", userId);
-
+        //caluculate the user bank model and get the total amount
         const User = await UserBankModel.findOne({ userId });
         console.log(User)
         if (!User || !User.bankNames) {
@@ -320,16 +210,25 @@ userRouter.get("/total", auth, async (req, res, next) => {
         }
 
         console.log("User Data:", User);
-
         const totalAmount = User.bankNames.reduce((acc, ele) => {
             console.log("Processing element:", ele);
             return acc + (ele.amount || 0);
         }, 0);
-
+        //caluculaye the total expenditure of the user and get the total expenditure
+        const userExpenditure = await ExpenseModel.findOne({userId})
+        if(!userExpenditure)
+            return res.status(404).json({
+                success:0,
+                msg:"User Not Found"
+            })
+        const totalExpenditure = Object.values(userExpenditure.expenses).reduce((acc,ele)=>{
+            return acc + ele.reduce((acc,ele)=>acc+ele.amount,0)
+        },0)
         return res.status(200).json({
             success: 1,
             msg: "Data Fetched",
             totalAmount,
+            totalExpenditure
         });
     } catch (e) {
         console.log("Error In the /total", e);
@@ -346,7 +245,7 @@ userRouter.get("/info",auth, async (req,res,next)=>{
         if(!userInfo)
             return res.status(402).json({
         success:0,
-    msg:"User Not Found",
+        msg:"User Not Found",
     
 })
 
@@ -365,3 +264,55 @@ userRouter.get("/info",auth, async (req,res,next)=>{
         next(e)
     }
 })
+
+//route to get all the expenses based on the given time period 
+userRouter.get("/expenses", auth, async (req, res, next) => {
+    try {
+        const { user } = req.user;
+        const userId = new mongoose.Types.ObjectId(user);
+        const { category, from, to } = req.query;
+
+        // Convert `from` and `to` to Date objects
+        const fromTime = new Date(from);
+        const toTime = new Date(to);
+
+        // Validate dates
+        if (isNaN(fromTime.getTime()) || isNaN(toTime.getTime())) {
+            return res.status(400).json({
+                success: 0,
+                msg: "Invalid date format for 'from' or 'to'. Please use ISO 8601 format.",
+            });
+        }
+
+        // Fetch user data
+        const userExist = await ExpenseModel.findOne({ userId });
+        if (!userExist) {
+            return res.status(404).json({
+                success: 0,
+                msg: "User not found",
+            });
+        }
+
+        // Check if category exists
+        if (!userExist.expenses[category]) {
+            return res.status(400).json({
+                success: 0,
+                msg: `Invalid category '${category}'. Available categories are: ${Object.keys(userExist.expenses).join(", ")}`,
+            });
+        }
+
+        // Filter expenses by date range
+        const expenses = userExist.expenses[category].filter((ele) => {
+            const createdDate = new Date(ele.created);
+            return createdDate >= fromTime && createdDate <= toTime;
+        });
+
+        res.status(200).json({
+            success: 1,
+            expenses,
+        });
+    } catch (e) {
+        console.error("Error in the /expenses route:", e);
+        next(e);
+    }
+});

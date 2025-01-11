@@ -20,7 +20,7 @@ const CommonFiledsSchema = new mongoose.Schema({
 })
 const ExpenseSchema = new mongoose.Schema({
     userId: {
-        type: mongoose.Types.ObjectId,
+        type: mongoose.Types.ObjectId,  
         required: true,
         unique: true,
         ref: "user",
