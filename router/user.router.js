@@ -136,10 +136,12 @@ userRouter.post("/add-expense",auth,async(req,res,next)=>{
 
     try {
         const {user} = req.user;
+        console.log(req.body)
         const {category,bank} =  req.body
         const userId = new mongoose.Types.ObjectId(user)
         const validate = ExpenseValidation.safeParse(req.body)
-        if(!validate.success && !bank)
+        console.log(validate)
+        if(!validate.success || !bank)
             return res.status(401).json({
         success:0,
         msg : "Invalid Inputs or Bank Name Error ",
@@ -153,7 +155,7 @@ userRouter.post("/add-expense",auth,async(req,res,next)=>{
         console.log(userExist)
         userExist.expenses[category].push({title,description,amount})
         userAccount.bankNames.map((ele)=>{
-            if(ele.name == bank){
+            if(ele.name === bank){
                 ele.amount +=amount 
             }
         })
