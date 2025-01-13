@@ -315,3 +315,28 @@ userRouter.delete("/delete-expenses", auth, async (req, res, next) => {
         next(e);
     }
 });
+
+
+// route to rest all the balance of the user
+userRouter.delete("/reset-balance", auth, async (req, res, next) => {
+    try {
+        const { user } = req.user;
+        const userId = new mongoose.Types.ObjectId(user);
+        const userExist = await UserBankModel.findOne({ userId
+        });
+        if (!userExist)
+            return res.status(404).json({
+                success: 0,
+                msg: "User Not Found"
+            });
+        userExist.bankNames = [];
+        await userExist.save();
+        res.status(200).json({
+            success: 1,
+            msg: "Balance Reset"
+        });
+    } catch (e) {
+        console.log("Error in the /reset-balance", e);
+        next(e);
+    }
+});
