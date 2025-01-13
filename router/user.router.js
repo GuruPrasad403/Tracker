@@ -169,8 +169,8 @@ userRouter.get("/total", auth, async (req, res, next) => {
         return res.status(200).json({
             success: 1,
             msg: "Data Fetched",
-            totalAmount,
-            totalExpenditure
+            totalAmount : totalAmount || 0,
+            totalExpenditure : totalExpenditure || 0
         });
     } catch (e) {
         console.log("Error In the /total", e);
