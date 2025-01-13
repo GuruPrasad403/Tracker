@@ -15,52 +15,7 @@ userRouter.get("/",auth, (req,res)=>{
     })
 })
 
-userRouter.post("/pin",auth,async (req,res,next)=>{
-    try {
-        const {pin} = req.body;
-        const {validate} = req.user;
-        const hashedPin = await bcrypt.hash(pin,5);
-        if(![...pin].length==4)
-            return res.status(400).json({
-        success:0,
-        msg :"Invalid Pin"
-    })
-        const user = await UserModel.findOneAndUpdate({email:validate},
-            {$set : {pin:hashedPin}},
-            {new :true}
-        )
-        res.status(200).json({
-            success:1,
-            msg:"Pin has been set",
-            user
-        })
-    } catch (e) {
-        console.log("error in the userRoute and /pin",e)
-        next(e)
-    }
-})
 
-userRouter.get("/pin",auth,async (req,res,next)=>{
-    try{
-        const {pin} =  req.body
-        const user  = await UserModel.findOne({email:req.user.validate})
-        const validate = await bcrypt.compare(pin,user?.pin);
-    if(!validate){
-        return res.status(401).json({
-                success:0,
-                msg:"Invalid Pin"
-                })
-    }
-    res.status(200).json({
-        success:1,
-        msg:"Correct"
-    })
-    }
-    catch(e){
-        console.log("Error in the UserRoute /pin get",e)
-        next(e)
-    }
-})
 userRouter.post("/add-bank",auth,async(req,res,next)=>{
     try {
         const {user} = req.user
@@ -114,21 +69,6 @@ userRouter.post("/add-bank",auth,async(req,res,next)=>{
     }
 })
 
-userRouter.delete("/delet-bank",auth,async(req,res,next)=>{
-    try {
-        const {user} = req.user
-        const userId = new mongoose.Types.ObjectId(user)
-        const deletedAccount = await UserBankModel.findByIdAndDelete(userId)
-        res.status(200).json({
-            success:0,
-            msg:"User Account has been deleted",
-            deletedAccount
-        })
-    } catch (e) {
-        console.log("Error in the delet-bank",e)
-        next(e)
-    }
-})
 
 
 
@@ -347,6 +287,31 @@ userRouter.get("/expenses-today", auth, async (req, res, next) => {
         });
     } catch (e) {
         console.log("Error in the /expenses-today", e);
+        next(e);
+    }
+});
+
+
+// route to delelte all the expenses of the user 
+userRouter.delete("/delete-expenses", auth, async (req, res, next) => {
+    try {
+        const { user } = req.user;
+        const userId = new mongoose.Types.ObjectId(user);
+        const userExist = await ExpenseModel.findOne({ userId
+        });
+        if (!userExist)
+            return res.status(404).json({
+                success: 0,
+                msg: "User Not Found"
+            });
+        await ExpenseModel.deleteOne
+            ({ userId });
+        res.status(200).json({
+            success: 1,
+            msg: "All Expenses Deleted"
+        });
+    } catch (e) {
+        console.log("Error in the /delete-expenses", e);
         next(e);
     }
 });
