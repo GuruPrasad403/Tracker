@@ -139,7 +139,8 @@ userRouter.post("/add-expense",auth,async(req,res,next)=>{
 userRouter.get("/total", auth, async (req, res, next) => {
     try {
         const { user } = req?.user;
-        const userId = mongoose.Types.ObjectId.createFromTime(user);
+        
+        const userId = new mongoose.Types.ObjectId(user);
         console.log("User ID:", userId);
         //caluculate the user bank model and get the total amount
         const User = await UserBankModel.findOne({ userId });
