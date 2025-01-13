@@ -340,3 +340,47 @@ userRouter.delete("/reset-balance", auth, async (req, res, next) => {
         next(e);
     }
 });
+
+userRouter.get("/category-summary", auth, async (req, res, next) => {
+    try {
+        const { user } = req.user;
+        const userId = new mongoose.Types.ObjectId(user);
+        const userExist = await ExpenseModel.findOne({ userId });
+
+        if (!userExist) {
+            return res.status(404).json({
+                success: 0,
+                msg: "User not found",
+            });
+        }
+
+        const categoryName = [
+            "Housing",
+            "Transportation",
+            "Food",
+            "Medical",
+            "Entertainment",
+            "Education",
+            "Insurance",
+            "Taxes",
+            "PersonalCare",
+            "Others"
+        ];
+
+        const categoryExpenses = categoryName.map(category => {
+            const expenses = userExist.expenses[category] || [];
+            return expenses.reduce((acc, expense) => acc + -(expense.amount), 0);
+        });
+        const mostSpent = categoryName[categoryExpenses.indexOf(Math.max(...categoryExpenses))];    
+        console.log("Most Spent:", mostSpent);
+        res.status(200).json({
+            success: 1,
+            categoryName,
+            categoryExpenses,
+            mostSpent
+        });
+    } catch (e) {
+        console.log("Error in the /category-summary", e);
+        next(e);
+    }
+});
