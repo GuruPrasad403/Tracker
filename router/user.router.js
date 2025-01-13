@@ -145,7 +145,7 @@ userRouter.post("/add-expense",auth,async(req,res,next)=>{
             return res.status(401).json({
         success:0,
         msg : "Invalid Inputs or Bank Name Error ",
-        errors : validate.error.issues
+        errors : validate?.error?.issues
 
     })
     const userExist = await ExpenseModel.findOne({userId})
@@ -315,6 +315,38 @@ userRouter.get("/expenses", auth, async (req, res, next) => {
         });
     } catch (e) {
         console.error("Error in the /expenses route:", e);
+        next(e);
+    }
+});
+
+
+
+
+//route to get all the expenses of the user today 
+userRouter.get("/expenses-today", auth, async (req, res, next) => {
+    try {
+        const { user } = req.user;
+        const userId = new mongoose.Types.ObjectId(user);
+        const userExist = await ExpenseModel.findOne({ userId });
+        if (!userExist)
+            return res.status(404).json({
+                success: 0,
+                msg: "User Not Found"
+            });
+        const today = new Date();
+        const expenses = Object.entries(userExist.expenses).reduce((acc, [category, expenseList]) => {
+            const filteredExpenses = expenseList.filter((ele) => {
+                const createdDate = new Date(ele.created);
+                return createdDate.getDate() === today.getDate();
+            }).map(expense => ({ ...expense.toObject(), category }));
+            return acc.concat(filteredExpenses);
+        }, []);
+        res.status(200).json({
+            success: 1,
+            expenses
+        });
+    } catch (e) {
+        console.log("Error in the /expenses-today", e);
         next(e);
     }
 });
