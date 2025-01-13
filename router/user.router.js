@@ -139,7 +139,7 @@ userRouter.post("/add-expense",auth,async(req,res,next)=>{
 userRouter.get("/total", auth, async (req, res, next) => {
     try {
         const { user } = req?.user;
-        const userId = new mongoose.Types.ObjectId(user);
+        const userId = mongoose.Types.ObjectId.createFromTime(user);
         console.log("User ID:", userId);
         //caluculate the user bank model and get the total amount
         const User = await UserBankModel.findOne({ userId });
@@ -158,14 +158,13 @@ userRouter.get("/total", auth, async (req, res, next) => {
         }, 0);
         //caluculaye the total expenditure of the user and get the total expenditure
         const userExpenditure = await ExpenseModel.findOne({userId})
-        if(!userExpenditure)
-            return res.status(404).json({
-                success:0,
-                msg:"User Not Found"
-            })
-        const totalExpenditure = Object.values(userExpenditure.expenses).reduce((acc,ele)=>{
-            return acc + ele.reduce((acc,ele)=>acc+ele.amount,0)
-        },0)
+        
+        let totalExpenditure = 0;
+        if(userExpenditure) {
+            totalExpenditure = Object.values(userExpenditure.expenses).reduce((acc,ele)=>{
+                return acc + ele.reduce((acc,ele)=>acc+ele.amount,0)
+            },0);
+        }
         return res.status(200).json({
             success: 1,
             msg: "Data Fetched",
